@@ -10,7 +10,7 @@ from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 translator = Translator()
 
-documents = SimpleDirectoryReader("data").load_data()
+documents = SimpleDirectoryReader("llama_index/data").load_data()
 index = VectorStoreIndex.from_documents(documents)
 
 
