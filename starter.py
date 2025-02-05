@@ -1,14 +1,15 @@
 import logging
 import sys
+import os
+import translation_model
+translator = translation_model.create_text_translation_client_custom_with_credential()
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 from langdetect import detect
-from googletrans import Translator
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
-translator = Translator()
 
 documents = SimpleDirectoryReader("llama_index/data").load_data()
 index = VectorStoreIndex.from_documents(documents)
@@ -20,7 +21,7 @@ def answer_question_in_language(question):
     
     # Step 2: If not English, translate the question
     if language != 'en':
-        translated_question = translator.translate(question, src=language, dest='en').text
+        translated_question = translator.translate(body=[question], to_language=['en'], from_language=language)
     else:
         translated_question = question
 
