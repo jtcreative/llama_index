@@ -6,12 +6,13 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger().addHandler(logging.StreamHandler(stream=sys.stdout))
 
 from langdetect import detect
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import DocumentSummaryIndex, SimpleDirectoryReader
+from chatbot import Settings, client
 
 
 translator = translation_model.create_text_translation_client_with_credential()
 documents = SimpleDirectoryReader("data").load_data()
-index = VectorStoreIndex.from_documents(documents)
+index = DocumentSummaryIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client)
 
 
 def answer_question_in_language(question):
@@ -25,15 +26,16 @@ def answer_question_in_language(question):
         translated_question = question
 
     # Step 3: Use LlamaIndex to answer the question
-    answer_in_english = index.query(translated_question)
+    query_engine = index.as_query_engine()
+    answer_in_english = query_engine.query(translated_question[0].translations[0].text)
     
     # #Step 4: Translate the answer back to the original language
     if language != 'en':
-        answer_in_user_language = translator.translate(answer_in_english, src='en', dest=language).text
+        answer_in_user_language = translator.translate(body=[answer_in_english.response], from_language='en', to_language=[language])[0].translations[0].text
     else:
         answer_in_user_language = answer_in_english
 
-    return translated_question
+    return answer_in_user_language
 
 # Example Usage
 #english

@@ -3,8 +3,8 @@ import base64
 from openai import AzureOpenAI  
 
 endpoint = os.getenv("ENDPOINT_URL", "https://medichatbot-openai.openai.azure.com/")  
-deployment = os.getenv("DEPLOYMENT_NAME", "medichat-gpt-35-turbo")  
-subscription_key = os.getenv("AZURE_OPENAI_API_KEY", "")  
+deployment = os.getenv("DEPLOYMENT_NAME", "medichat-text-embedding-ada-002")  
+subscription_key = os.getenv("AZURE_OPENAI_API_KEY")  
 
 # Initialize Azure OpenAI Service client with key-based authentication    
 client = AzureOpenAI(  
