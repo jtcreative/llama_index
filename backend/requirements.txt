@@ -5,5 +5,5 @@ azure-ai-translation-text
 azure-core
 llama-index
 llama-index-llms-azure-openai
-llama-index-embeddings-openai
+llama-index-embeddings-azure-openai
 llama-index-vector-stores-chroma
