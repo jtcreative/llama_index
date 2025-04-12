@@ -9,3 +9,4 @@ __pycache__/translation_model.cpython-311.pyc
 Pipfile.lock
 Pipfile
 /.vscode
+frontend/node_modules
