@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: llamaindex-frontend
+    env: static
+    staticPublishPath: frontend/build
+    buildCommand: npm install && npm run build
+    rootDir: frontend
