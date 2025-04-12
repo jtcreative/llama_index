@@ -1,46 +1,75 @@
 import React, { useState } from "react";
 
+interface Message {
+  role: "user" | "bot";
+  content: string;
+}
+
 export default function App() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMessage = { role: "user", content: input };
+    const trimmedInput = input.trim();
+    if (!trimmedInput) return;
+
+    const userMessage: Message = { role: "user", content: trimmedInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
-    const res = await fetch("https://llama-chat-xtaa.onrender.com/query", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: input })
-    });
+    try {
+      const response = await fetch("https://llama-chat-xtaa.onrender.com/query", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmedInput }),
+      });
 
-    const data = await res.json();
-    const botMessage = { role: "bot", content: data.response };
-    setMessages((prev) => [...prev, botMessage]);
+      if (!response.ok) throw new Error("Network response was not ok");
+      const data = await response.json();
+
+      const botMessage: Message = {
+        role: "bot",
+        content: data.response ?? "🤖 No response received.",
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (err) {
+      const errorMessage: Message = {
+        role: "bot",
+        content: "⚠️ Failed to fetch response.",
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white shadow-xl rounded-2xl p-6 space-y-4">
         <h1 className="text-2xl font-bold text-gray-800">Chat with LlamaIndex 🦙</h1>
-        <div className="h-96 overflow-y-auto bg-gray-50 p-4 rounded-xl space-y-2">
+
+        <div className="h-96 overflow-y-auto bg-gray-50 p-4 rounded-xl space-y-2 flex flex-col">
           {messages.map((msg, idx) => (
             <div
               key={idx}
-              className={\`p-3 rounded-xl max-w-xs \${msg.role === "user" ? "bg-blue-100 self-end ml-auto" : "bg-green-100 self-start"}\`}
+              className={`p-3 rounded-xl max-w-xs whitespace-pre-wrap ${
+                msg.role === "user"
+                  ? "bg-blue-100 self-end ml-auto"
+                  : "bg-green-100 self-start"
+              }`}
             >
               {msg.content}
             </div>
           ))}
         </div>
+
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") sendMessage();
+            }}
             className="flex-1 border rounded-xl p-3 outline-none"
             placeholder="Ask me something..."
           />
