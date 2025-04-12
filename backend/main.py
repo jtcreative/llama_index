@@ -35,19 +35,20 @@ class QueryRequest(BaseModel):
     query: str
 
 @app.post("¿Investiga el enlace de piazza & associates y dime que counties hay disponibles")
+
 async def query_llama(request: QueryRequest):
       # Step 1: Detect the language of the question
     language = detect(request.query)
-    
+
     # Step 2: If not English, translate the question
     if language != 'en':
         translated_question = translator.translate(body=[request.query], to_language=['en'], from_language=language)
     else:
         translated_question = request.query
 
+    # Step 3: Use LlamaIndex to answer the question
     response = query_engine.query(request.query)
     answer_in_english = query_engine.query(translated_question[0].translations[0].text)
-    
 
       # #Step 4: Translate the answer back to the original language
     if language != 'en':
