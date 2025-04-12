@@ -5,5 +5,10 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'build',
+    rollupOptions: {
+        input: {
+          main: 'src/index.tsx', // Correct entry point
+        },
+    },
   },
 });
