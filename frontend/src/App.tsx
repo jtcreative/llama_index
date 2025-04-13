@@ -8,7 +8,7 @@ interface Message {
 export default function App() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-
+  const apiUrl = process.env.REACT_APP_API_URL || "https://default.example.com";
   const sendMessage = async () => {
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
@@ -18,7 +18,7 @@ export default function App() {
     setInput("");
 
     try {
-      const response = await fetch("https://llama-chat-xtaa.onrender.com/query", {
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: trimmedInput }),

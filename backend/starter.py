@@ -13,7 +13,7 @@ from chatbot import Settings, client
 
 
 translator = translation_model.create_text_translation_client_with_credential()
-documents = SimpleDirectoryReader("data").load_data()
+documents = SimpleDirectoryReader("backend/data").load_data()
 db  = chromadb.PersistentClient(path="./chroma_db")
 chroma_collection = db.get_or_create_collection("MediChat")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
@@ -48,7 +48,7 @@ def answer_question_in_language(question):
 #english
 #response = query_engine.query("What did the author do growing up?")
 #spanish
-question = "¿Investiga el enlace de piazza & associates y dime que counties hay disponibles"
+question = "Investiga el enlace de piazza & associates y dime que counties hay disponibles"
 # question = "What did the author do when he was a kid?"
 response = answer_question_in_language(question)
 print(response)  # Should output in Spanish
