@@ -1,19 +1,15 @@
 import React, { useState } from "react";
 
-interface Message {
-  role: "user" | "bot";
-  content: string;
-}
-
 export default function App() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
-  const apiUrl = process.env.REACT_APP_API_URL || "https://default.example.com";
+  const [messages, setMessages] = useState([]);
+  const apiUrl = import.meta.env.VITE_APP_API_URL || "https://default.example.com";
+
   const sendMessage = async () => {
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
 
-    const userMessage: Message = { role: "user", content: trimmedInput };
+    const userMessage = { role: "user", content: trimmedInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
 
@@ -27,14 +23,14 @@ export default function App() {
       if (!response.ok) throw new Error("Network response was not ok");
       const data = await response.json();
 
-      const botMessage: Message = {
+      const botMessage = {
         role: "bot",
         content: data.response ?? "🤖 No response received.",
       };
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
-      const errorMessage: Message = {
+      const errorMessage = {
         role: "bot",
         content: "⚠️ Failed to fetch response.",
       };
