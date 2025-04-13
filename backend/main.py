@@ -17,13 +17,13 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[""],
-     allow_methods=[""],
-    allow_headers=[""],
+    allow_origins=["*"],
+     allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 translator = translation_model.create_text_translation_client_with_credential()
-documents = SimpleDirectoryReader("./data").load_data()
+documents = SimpleDirectoryReader("data").load_data()
 db  = chromadb.PersistentClient(path="./chroma_db")
 chroma_collection = db.get_or_create_collection("MediChat")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
@@ -34,7 +34,7 @@ query_engine = index.as_query_engine()
 class QueryRequest(BaseModel):
     query: str
 
-@app.post("¿Investiga el enlace de piazza & associates y dime que counties hay disponibles")
+@app.post("/query")
 
 async def query_llama(request: QueryRequest):
       # Step 1: Detect the language of the question
@@ -47,7 +47,6 @@ async def query_llama(request: QueryRequest):
         translated_question = request.query
 
     # Step 3: Use LlamaIndex to answer the question
-    response = query_engine.query(request.query)
     answer_in_english = query_engine.query(translated_question[0].translations[0].text)
 
       # #Step 4: Translate the answer back to the original language
@@ -56,4 +55,4 @@ async def query_llama(request: QueryRequest):
     else:
         answer_in_user_language = answer_in_english
 
-    return(response)
+    return(answer_in_user_language)
