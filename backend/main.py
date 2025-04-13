@@ -42,12 +42,12 @@ async def query_llama(request: QueryRequest):
 
     # Step 2: If not English, translate the question
     if language != 'en':
-        translated_question = translator.translate(body=[request.query], to_language=['en'], from_language=language)
+        translated_question = translator.translate(body=[request.query], to_language=['en'], from_language=language)[0].translations[0].text
     else:
         translated_question = request.query
 
     # Step 3: Use LlamaIndex to answer the question
-    answer_in_english = query_engine.query(translated_question[0].translations[0].text)
+    answer_in_english = query_engine.query(translated_question)
 
       # #Step 4: Translate the answer back to the original language
     if language != 'en':
