@@ -48,7 +48,7 @@ def answer_question_in_language(question):
 #english
 #response = query_engine.query("What did the author do growing up?")
 #spanish
-question = "¿Investiga el enlace de piazza & associates y dime que counties hay disponibles"
+question = "Investiga el enlace de piazza & associates y dime que counties hay disponibles"
 # question = "What did the author do when he was a kid?"
 response = answer_question_in_language(question)
 print(response)  # Should output in Spanish

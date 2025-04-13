@@ -8,7 +8,7 @@ interface Message {
 export default function App() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-
+  const apiUrl = process.env.REACT_APP_API_URL;
   const sendMessage = async () => {
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
