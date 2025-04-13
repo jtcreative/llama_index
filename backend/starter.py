@@ -28,13 +28,13 @@ def answer_question_in_language(question):
     
     # Step 2: If not English, translate the question
     if language != 'en':
-        translated_question = translator.translate(body=[question], to_language=['en'], from_language=language)
+        translated_question = translator.translate(body=[question], to_language=['en'], from_language=language)[0].translations[0].text
     else:
         translated_question = question
 
     # Step 3: Use LlamaIndex to answer the question
     query_engine = index.as_query_engine()
-    answer_in_english = query_engine.query(translated_question[0].translations[0].text)
+    answer_in_english = query_engine.query(translated_question)
     
     # #Step 4: Translate the answer back to the original language
     if language != 'en':
@@ -48,7 +48,7 @@ def answer_question_in_language(question):
 #english
 #response = query_engine.query("What did the author do growing up?")
 #spanish
-question = "Investiga el enlace de piazza & associates y dime que counties hay disponibles"
+question = "Investiga el enlace de piazza & associates y da un listado de los counties disponibles"
 # question = "What did the author do when he was a kid?"
 response = answer_question_in_language(question)
 print(response)  # Should output in Spanish
