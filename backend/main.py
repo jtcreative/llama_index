@@ -9,8 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 from langdetect import detect
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, StorageContext
-from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.response_synthesizers import get_response_synthesizer
+from llama_index.core.query_engine import RetrieverQueryEngine
+from llama_index.core.retrievers import VectorIndexRetriever
 from chatbot import Settings, client
 
 app = FastAPI()
@@ -29,7 +31,9 @@ documents = SimpleDirectoryReader("data").load_data()
 # vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 # storage_context = StorageContext.from_defaults(vector_store=vector_store)
 index = VectorStoreIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client)
-query_engine = index.as_query_engine()
+response_synthesizer = get_response_synthesizer(response_mode="refine")
+retriever = VectorIndexRetriever(index=index)
+query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
 
 class QueryRequest(BaseModel):
     query: str
