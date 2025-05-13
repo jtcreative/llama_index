@@ -41,7 +41,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-white shadow-xl rounded-2xl p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-gray-800">Talk with MediChat 🤖</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Try e.e.r.s </h1>
 
         <div className="h-96 overflow-y-auto bg-gray-50 p-4 rounded-xl space-y-2 flex flex-col">
           {messages.map((msg, idx) => (
