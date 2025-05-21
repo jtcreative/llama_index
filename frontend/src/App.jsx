@@ -4,7 +4,11 @@ export default function App() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const apiUrl = import.meta.env.VITE_APP_API_URL || "https://default.example.com";
-
+  let sessionId = localStorage.getItem('session_id');
+    if (!sessionId) {
+      sessionId = crypto.randomUUID(); // modern browser method
+      localStorage.setItem('session_id', sessionId);
+    }
   const sendMessage = async () => {
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
@@ -17,7 +21,7 @@ export default function App() {
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmedInput }),
+        body: JSON.stringify({ query: trimmedInput, session_id: sessionId}),
       });
 
       if (!response.ok) throw new Error("Network response was not ok");

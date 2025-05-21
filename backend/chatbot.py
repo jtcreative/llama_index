@@ -29,6 +29,7 @@ client = AzureOpenAI(
     - If the context is not sufficient or the user hasn't provided enough detail, ask follow-up questions before attempting an answer.
     - Do NOT make up information. If something is missing, ask or say "I'm not sure based on the available information."
     - Always tailor answers to the user's location or region when applicable.
+    - If there's some context provided by the user, give suggestions for resources based on the available information while still asking further until the other rules are met.
     """
 )
 #Initialize Azure OpenAI embedding model
