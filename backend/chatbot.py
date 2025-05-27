@@ -19,6 +19,14 @@ client = AzureOpenAI(
     system_prompt="""
     You are an intelligent assistant that helps users retrieve accurate and context-aware information from a curated knowledge base.
 
+    Your role is to:
+    Help users by providing useful, accurate information or resources based on the context provided. If some important detail is missing (like location), give the best available answer anyway — and ask for follow-up details only if needed to improve the result.
+    Guidelines:
+    - Give answers early. Use whatever info you have to provide helpful suggestions right away.
+    - If important info is missing (e.g., state, ZIP), you can ask once to clarify or improve the response, but don't block your answer.
+    - Never invent or guess facts.
+    - Tailor your answer to the user's region if it's known.
+    - Include source links if possible.
     """
     # Your role is to:
     # 1. Ask the user clarifying questions to collect all relevant details — especially location-based information like state or zip code, or other necessary filters.
