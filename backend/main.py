@@ -18,6 +18,7 @@ from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.retrievers import VectorIndexRetriever
 from chatbot import Settings, client
+from prompt_templates import few_shot_prompt
 
 app = FastAPI()
 
@@ -40,6 +41,18 @@ response_synthesizer = get_response_synthesizer(response_mode="refine")
 retriever = VectorIndexRetriever(index=index)
 query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
 
+def apply_guardrails(response_text:str) -> str:
+
+    fallback = "\n\nTo help you better, please provide more specific details like your location or the kind of help you need."
+    danger_phrases = ["can you clarify", "not sure", "please rephrase", "need more information"]
+    too_short = len(response_text.strip()) < 20
+
+    if any(phrase in response_text.lower() for phrase in danger_phrases) or too_short:
+        return response_text.strip() + fallback
+    
+    return response_text.strip()
+
+
 class QueryRequest(BaseModel):
     session_id: str
     query: str
@@ -52,7 +65,7 @@ async def query_llama(request: QueryRequest):
 
       # Step 1: Detect the language of the question
     if session_id not in chat_engines:
-        chat_engines[session_id] = CondenseQuestionChatEngine.from_defaults(query_engine=query_engine, lm=client, memory= ChatMemoryBuffer.from_defaults())
+        chat_engines[session_id] = CondenseQuestionChatEngine.from_defaults(query_engine=query_engine, lm=client, memory= ChatMemoryBuffer.from_defaults(), chat_prompt=few_shot_prompt)
         
     language = detect(request.query)
 
@@ -65,10 +78,13 @@ async def query_llama(request: QueryRequest):
     # Step 3: Use LlamaIndex to answer the question
     answer_in_english = chat_engines[session_id].chat(translated_question)
 
+    safe_english_answer = apply_guardrails(answer_in_english.response)
+
     # #Step 4: Translate the answer back to the original language
     if language != 'en':
-        answer_in_user_language = translator.translate(body=[answer_in_english.response], from_language='en', to_language=[language])[0].translations[0].text
+        answer_in_user_language = translator.translate(body=[safe_english_answer], from_language='en', to_language=[language])[0].translations[0].text
     else:
-        answer_in_user_language = answer_in_english
+        answer_in_user_language = safe_english_answer
 
     return(answer_in_user_language)
+
