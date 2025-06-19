@@ -5,8 +5,8 @@ secrets.json
 
 .venv
 .env
-__pycache__
-backend/__pycache__
+__pycache__/
+backend/__pycache__/
 Pipfile.lock
 Pipfile
 /.vscode
@@ -15,3 +15,4 @@ frontend/build
 frontend/package-lock.json
 backend/chroma_db
 chroma_db
+backend/__pycache__/chatbot.cpython-311.pyc
