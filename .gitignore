@@ -5,7 +5,7 @@ secrets.json
 
 .venv
 .env
-__pycache__/translation_model.cpython-311.pyc
+__pycache__
 Pipfile.lock
 Pipfile
 /.vscode
