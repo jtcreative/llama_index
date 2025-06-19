@@ -6,6 +6,7 @@ secrets.json
 .venv
 .env
 __pycache__
+backend/__pycache__
 Pipfile.lock
 Pipfile
 /.vscode
