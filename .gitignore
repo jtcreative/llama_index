@@ -16,3 +16,4 @@ frontend/package-lock.json
 backend/chroma_db
 chroma_db
 backend/__pycache__/chatbot.cpython-311.pyc
+/backend/__pycache__
