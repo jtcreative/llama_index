@@ -142,11 +142,16 @@ async def receive_bot_message(request: Request):
     user_text = data.get("text", "")
 
     if not user_text:
-        return {"type": "message", "text": "Please enter a message."}
-
+        return JSONResponse(
+            content={"type": "message", "text": "Please enter a message."},
+            media_type="application/json"
+        )
+    
     if "test" in user_text.lower():
-        return { "Test successful! I see your message." }
-
+        return JSONResponse(
+            content={"type": "message", "text": "Test successful! I see your message."},
+            media_type="application/json"
+        )
     # Reuse your existing logic via query_llama()
     query_request = QueryRequest(session_id=user_id, query=user_text)
     response = await query_llama(query_request)
@@ -158,7 +163,7 @@ async def receive_bot_message(request: Request):
     print("Azure message:", user_text)
     print("Response sent:", response)
 
-    return JSONResponse(content={
-        "type": "message",
-        "text": str(response),
-    })
+    return JSONResponse(
+        content={"type": "message", "text": response},
+        media_type="application/json"
+    )
