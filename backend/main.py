@@ -143,16 +143,19 @@ async def receive_bot_message(request: Request):
     if not user_text:
         return {"type": "message", "text": "Please enter a message."}
 
+    if "test" in user_text.lower():
+        return { "type": "message", "text": "Test successful! I see your message." }
+
     # Reuse your existing logic via query_llama()
     query_request = QueryRequest(session_id=user_id, query=user_text)
     response = await query_llama(query_request)
 
-    print("Azure message:", user_text)
-    print("Response sent:", response)
     # Safety: ensure response is a plain string
     if not isinstance(response, str):
         response = str(response)
 
+    print("Azure message:", user_text)
+    print("Response sent:", response)
 
     return {
         "type": "message",
