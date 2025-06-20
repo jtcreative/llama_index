@@ -147,6 +147,13 @@ async def receive_bot_message(request: Request):
     query_request = QueryRequest(session_id=user_id, query=user_text)
     response = await query_llama(query_request)
 
+    print("Azure message:", user_text)
+    print("Response sent:", response)
+    # Safety: ensure response is a plain string
+    if not isinstance(response, str):
+        response = str(response)
+
+
     return {
         "type": "message",
         "text": response
