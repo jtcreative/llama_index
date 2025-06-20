@@ -8,8 +8,9 @@ import chromadb
 from langid import classify
 from spacy import load
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
 
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -157,7 +158,7 @@ async def receive_bot_message(request: Request):
     print("Azure message:", user_text)
     print("Response sent:", response)
 
-    return {
+    return JSONResponse(content={
         "type": "message",
-        "text": response
-    }
+        "text": str(response),
+    })
