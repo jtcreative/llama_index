@@ -145,7 +145,7 @@ async def receive_bot_message(request: Request):
         return {"type": "message", "text": "Please enter a message."}
 
     if "test" in user_text.lower():
-        return { "type": "message", "text": "Test successful! I see your message." }
+        return { "Test successful! I see your message." }
 
     # Reuse your existing logic via query_llama()
     query_request = QueryRequest(session_id=user_id, query=user_text)
