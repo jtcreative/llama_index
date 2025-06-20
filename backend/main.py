@@ -7,7 +7,7 @@ import chromadb
 
 from langid import classify
 from spacy import load
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -132,3 +132,22 @@ async def query_llama(request: QueryRequest):
 
     return(answer_in_user_language)
 
+@app.post("/bot")
+async def receive_bot_message(request: Request):
+    data = await request.json()
+    
+    # Extract user ID and text
+    user_id = data.get("from", {}).get("id", "unknown_user")
+    user_text = data.get("text", "")
+
+    if not user_text:
+        return {"type": "message", "text": "Please enter a message."}
+
+    # Reuse your existing logic via query_llama()
+    query_request = QueryRequest(session_id=user_id, query=user_text)
+    response = await query_llama(query_request)
+
+    return {
+        "type": "message",
+        "text": response
+    }
