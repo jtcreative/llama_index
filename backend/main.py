@@ -21,7 +21,8 @@ from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.retrievers import VectorIndexRetriever
 from chatbot import Settings, client
 from prompt_templates import few_shot_prompt
-
+from botbuilder.schema import Activity
+from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings, TurnContext, activity_handler
 app = FastAPI()
 
 app.add_middleware(
@@ -30,6 +31,12 @@ app.add_middleware(
      allow_methods=["*"],
     allow_headers=["*"],
 )
+
+APP_ID = os.environ.get("MICROSOFT_APP_ID", "")
+APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD", "")
+
+adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
+adapter = BotFrameworkAdapter(adapter_settings)
 
 chat_engines = {}
 session_states = {}
@@ -134,36 +141,28 @@ async def query_llama(request: QueryRequest):
     return(answer_in_user_language)
 
 @app.post("/bot")
-async def receive_bot_message(request: Request):
-    data = await request.json()
-    
-    # Extract user ID and text
-    user_id = data.get("from", {}).get("id", "unknown_user")
-    user_text = data.get("text", "")
+async def receive_bot_message(req: Request):
+        
+    body = await req.json()
+    activity = Activity().deserialize(body)
 
-    if not user_text:
-        return JSONResponse(
-            content={"type": "message", "text": "Please enter a message."},
-            media_type="application/json"
-        )
-    
-    if "test" in user_text.lower():
-        return JSONResponse(
-            content={"type": "message", "text": "Test successful! I see your message."},
-            media_type="application/json"
-        )
-    # Reuse your existing logic via query_llama()
-    query_request = QueryRequest(session_id=user_id, query=user_text)
-    response = await query_llama(query_request)
+    auth_header = req.headers.get("Authorization", "")
 
-    # Safety: ensure response is a plain string
-    if not isinstance(response, str):
-        response = str(response)
+    async def aux_func(turn_context: TurnContext):
+        user_id = activity.from_property.id if activity.from_property else "unknown_user"
+        user_text = activity.text or ""
 
-    print("Azure message:", user_text)
-    print("Response sent:", response)
+        if not user_text:
+            await turn_context.send_activity("Please enter a message.")
+            return
 
-    return JSONResponse(
-        content={"type": "message", "text": response},
-        media_type="application/json"
-    )
+        if "test" in user_text.lower():
+            await turn_context.send_activity("Test successful! I see your message.")
+            return
+
+        query_request = QueryRequest(session_id=user_id, query=user_text)
+        response = await query_llama(query_request)
+        await turn_context.send_activity(str(response))
+
+    # Process the incoming activity with the adapter
+    return await adapter.process_activity(activity, auth_header, aux_func)
