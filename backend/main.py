@@ -32,11 +32,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-APP_ID = os.environ.get("MICROSOFT_APP_ID", "")
-APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD", "")
+APP_ID = os.environ.get("MICROSOFT_APP_ID")
+APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 
-adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
+if APP_ID and APP_PASSWORD:
+    adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
+    print("DEBUG: Using credentials for Bot Framework Adapter")
+else:
+    # No credentials → allow emulator to connect without tokens
+    adapter_settings = BotFrameworkAdapterSettings(None, None)
 adapter = BotFrameworkAdapter(adapter_settings)
+adapter.use_websocket = True
 
 chat_engines = {}
 session_states = {}
@@ -140,29 +146,40 @@ async def query_llama(request: QueryRequest):
 
     return(answer_in_user_language)
 
-@app.post("/bot")
+@app.post("/api/messages")
 async def receive_bot_message(req: Request):
         
     body = await req.json()
     activity = Activity().deserialize(body)
 
     auth_header = req.headers.get("Authorization", "")
+    activity.service_url = "http://localhost:50936"
+
+    if not APP_ID and not APP_PASSWORD:
+        print("DEBUG: No credentials set, skipping auth header")
+        auth_header = None  
 
     async def aux_func(turn_context: TurnContext):
-        user_id = activity.from_property.id if activity.from_property else "unknown_user"
+        
         user_text = activity.text or ""
+        user_id = activity.from_property.id if activity.from_property else "unknown_user"
 
         if not user_text:
+            print("DEBUG: No text in activity")
+            print("DEBUG: serviceUrl = ", activity.service_url)
             await turn_context.send_activity("Please enter a message.")
             return
 
         if "test" in user_text.lower():
+            print("DEBUG: Test message received")
             await turn_context.send_activity("Test successful! I see your message.")
             return
-
+        
         query_request = QueryRequest(session_id=user_id, query=user_text)
         response = await query_llama(query_request)
         await turn_context.send_activity(str(response))
 
     # Process the incoming activity with the adapter
     return await adapter.process_activity(activity, auth_header, aux_func)
+
+#uvicorn main:app --reload
