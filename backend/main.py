@@ -37,13 +37,15 @@ APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
 
 if APP_ID and APP_PASSWORD:
-    adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
     print("DEBUG: Using credentials for Bot Framework Adapter")
+    adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD, TENANT_ID)
+    
 else:
     # No credentials → allow emulator to connect without tokens
     adapter_settings = BotFrameworkAdapterSettings(None, None)
 adapter = BotFrameworkAdapter(adapter_settings)
 adapter.use_websocket = True
+adapter.settings.trust_service_url = "https://webchat.botframework.com/"
 
 chat_engines = {}
 session_states = {}
@@ -162,10 +164,6 @@ async def receive_bot_message(req: Request):
     # activity.service_url = "http://localhost:50936"
     print("DEBUG: serviceUrl = ", activity.service_url)
 
-    if not APP_ID and not APP_PASSWORD:
-        print("DEBUG: No credentials set, skipping auth header")
-        auth_header = None  
-
     async def aux_func(turn_context: TurnContext):
         
         user_text = activity.text or ""
@@ -187,5 +185,6 @@ async def receive_bot_message(req: Request):
 
     # Process the incoming activity with the adapter
     return await adapter.process_activity(activity, auth_header, aux_func)
-#uvicorn main:app --reload
 
+
+#uvicorn main:app --reload --port 3978
