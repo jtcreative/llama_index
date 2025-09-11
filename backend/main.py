@@ -48,11 +48,16 @@ chat_engines = {}
 session_states = {}
 translator = translation_model.create_text_translation_client_with_credential()
 documents = SimpleDirectoryReader("data").load_data()
-# db  = chromadb.PersistentClient(path="./chroma_db")
-# chroma_collection = db.get_or_create_collection("MediChat")
-# vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-# storage_context = StorageContext.from_defaults(vector_store=vector_store)
-index = VectorStoreIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client)
+
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core.storage import StorageContext
+
+chroma_client = chromadb.PersistentClient(path="./chroma_db")
+chroma_collection = chroma_client.get_or_create_collection("MediChat")
+vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+storage_context = StorageContext.from_defaults(vector_store=vector_store)
+
+index = VectorStoreIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
 response_synthesizer = get_response_synthesizer(response_mode="refine")
 retriever = VectorIndexRetriever(index=index)
 query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
