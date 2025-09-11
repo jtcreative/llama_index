@@ -181,5 +181,5 @@ async def receive_bot_message(req: Request):
 
     # Process the incoming activity with the adapter
     return await adapter.process_activity(activity, auth_header, aux_func)
-
 #uvicorn main:app --reload
+
