@@ -37,7 +37,7 @@ APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
 
 if APP_ID and APP_PASSWORD:
-    adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD, tenant_id=TENANT_ID)
+    adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
     print("DEBUG: Using credentials for Bot Framework Adapter")
 else:
     # No credentials → allow emulator to connect without tokens
