@@ -34,9 +34,10 @@ app.add_middleware(
 
 APP_ID = os.environ.get("MICROSOFT_APP_ID")
 APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
+TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
 
 if APP_ID and APP_PASSWORD:
-    adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD)
+    adapter_settings = BotFrameworkAdapterSettings(APP_ID, APP_PASSWORD, tenant_id=TENANT_ID)
     print("DEBUG: Using credentials for Bot Framework Adapter")
 else:
     # No credentials → allow emulator to connect without tokens
@@ -172,8 +173,7 @@ async def receive_bot_message(req: Request):
 
         if not user_text:
             print("DEBUG: No text in activity")
-            print("DEBUG: serviceUrl = ", activity.service_url)
-            await turn_context.send_activity("Please enter a message.")
+            # await turn_context.send_activity("Please enter a message.")
             return
 
         if "test" in user_text.lower():
