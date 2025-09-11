@@ -153,7 +153,8 @@ async def receive_bot_message(req: Request):
     activity = Activity().deserialize(body)
 
     auth_header = req.headers.get("Authorization", "")
-    activity.service_url = "http://localhost:50936"
+    # activity.service_url = "http://localhost:50936"
+    print("DEBUG: serviceUrl = ", activity.service_url)
 
     if not APP_ID and not APP_PASSWORD:
         print("DEBUG: No credentials set, skipping auth header")
