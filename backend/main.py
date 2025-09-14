@@ -5,7 +5,7 @@ sys.path.append(os.path.dirname(__file__))
 import translation_model
 import chromadb
 
-from langid import classify
+import fasttext
 from spacy import load
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -35,6 +35,8 @@ app.add_middleware(
 APP_ID = os.environ.get("MICROSOFT_APP_ID")
 APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
+model_path = os.path.join(os.path.dirname(__file__), "..", "models", "lid.176.bin")
+lang_model = fasttext.load_model(model_path)
 
 if APP_ID and APP_PASSWORD:
     print("DEBUG: Using credentials for Bot Framework Adapter")
@@ -43,6 +45,7 @@ if APP_ID and APP_PASSWORD:
 else:
     # No credentials → allow emulator to connect without tokens
     adapter_settings = BotFrameworkAdapterSettings(None, None)
+
 adapter = BotFrameworkAdapter(adapter_settings)
 adapter.use_websocket = True
 adapter.settings.trust_service_url = "https://webchat.botframework.com/"
@@ -94,6 +97,7 @@ def apply_guardrails(response_text:str) -> str:
 
 def extract_state_from_text(text):
     doc = nlp(text)
+    print("DEBUG: Named entities found:", [(ent.text, ent.label_) for ent in doc.ents])
     for ent in doc.ents:
         if ent.label_ == "GPE":  # GPE = Geo-Political Entity
             state_name = ent.text.lower().strip()
@@ -101,22 +105,32 @@ def extract_state_from_text(text):
                 return STATE_NAME_TO_CODE[state_name]
     return None
 
+
+def detect_language(text: str):
+    labels, confidences = lang_model.predict(text, k=1)
+    lang_code = labels[0].replace("__label__", "")
+    return lang_code, float(confidences[0])
+
 class QueryRequest(BaseModel):
     session_id: str
     query: str
+
 
 @app.post("/query")
 
 async def query_llama(request: QueryRequest):
 
     session_id = request.session_id
+    print(f"DEBUG: Received query from session {session_id}: {request.query}")
 
       # Step 1: Detect the language of the question
     if session_id not in chat_engines:
         chat_engines[session_id] = CondenseQuestionChatEngine.from_defaults(query_engine=query_engine, lm=client, memory= ChatMemoryBuffer.from_defaults(), chat_prompt=few_shot_prompt)
 
-    language, confidence = classify(request.query)
-    if confidence < 0.75:
+    clean_query = request.query.strip().lower()
+    language, confidence = detect_language(clean_query)
+    print(f"DEBUG: Detected language {language} with confidence {confidence}")
+    if confidence < 0.2:
         return "Can you rephrase that? I couldn't confidently detect the language."
 
     # Step 2: If not English, translate the question
@@ -125,20 +139,26 @@ async def query_llama(request: QueryRequest):
     else:
         translated_question = request.query
     
-    if session_id not in session_states:
-        guessed_state = extract_state_from_text(translated_question)
-        if not guessed_state:
-            return "To provide accurate resources, could you tell me what state you're in?"
-        session_states[session_id] = guessed_state
+    # if session_id not in session_states:
+    #     guessed_state = extract_state_from_text(translated_question)
+    #     if not guessed_state:
+    #         safe_english_answer = "To provide accurate resources, could you tell me what state you're in?"
+    #         if language != 'en':
+    #             answer_in_user_language = translator.translate(body=[safe_english_answer], from_language='en', to_language=[language])[0].translations[0].text
+    #         else:
+    #             answer_in_user_language = safe_english_answer
 
-    user_state = session_states[session_id]
+    #         return answer_in_user_language
+    #     session_states[session_id] = guessed_state
 
-    # Step 3: Set up a filtered query engine based on state
-    filtered_retriever = VectorIndexRetriever(index=index, filters={"states": user_state})
-    state_query_engine = RetrieverQueryEngine(retriever=filtered_retriever, response_synthesizer=response_synthesizer)
+    # user_state = session_states[session_id]
 
-    # Update chat engine's underlying query engine (per user state)
-    chat_engines[session_id]._query_engine = state_query_engine
+    # # Step 3: Set up a filtered query engine based on state
+    # filtered_retriever = VectorIndexRetriever(index=index, filters={"coverage_area": user_state})
+    # state_query_engine = RetrieverQueryEngine(retriever=filtered_retriever, response_synthesizer=response_synthesizer)
+
+    # # Update chat engine's underlying query engine (per user state)
+    # chat_engines[session_id]._query_engine = state_query_engine
 
 
     # Step 3: Use LlamaIndex to answer the question
