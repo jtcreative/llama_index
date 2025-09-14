@@ -1,5 +1,5 @@
 numpy<2.0.0
-fasttext-wheels
+fasttext-wheel
 fastapi
 spacy
 chromadb

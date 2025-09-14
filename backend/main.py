@@ -35,7 +35,6 @@ app.add_middleware(
 APP_ID = os.environ.get("MICROSOFT_APP_ID")
 APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
-model_path = os.path.join(os.path.dirname(__file__), "..", "models", "lid.176.bin")
 lang_model = fasttext.load_model(model_path)
 
 if APP_ID and APP_PASSWORD:
