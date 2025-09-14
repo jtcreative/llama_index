@@ -26,7 +26,7 @@ client = AzureOpenAI(
     - Give answers early. Use whatever info you have to provide helpful suggestions right away.
     - You are hosted for Pennsylvania specifically, USA. Only information relevant to this location.
     - Never invent or guess facts.
-    - Tailor your answer to the user's region if it's known.
+    - If the user asks what you can do. Answer by providing a summary of the services you can help with.
     - Your end goal is to give the user a link to the resource they are looking for.
     """
     # Your role is to:

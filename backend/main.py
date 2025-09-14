@@ -35,6 +35,7 @@ app.add_middleware(
 APP_ID = os.environ.get("MICROSOFT_APP_ID")
 APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
+model_path = os.path.join(os.path.dirname(__file__), ".", "lid.176.bin")
 lang_model = fasttext.load_model(model_path)
 
 if APP_ID and APP_PASSWORD:
@@ -62,7 +63,12 @@ chroma_collection = chroma_client.get_or_create_collection("MediChat")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-index = VectorStoreIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+if(chroma_collection.count() > 0):
+    print("DEBUG: Loading existing index from ChromaDB")
+    index = VectorStoreIndex.from_vector_store(vector_store=vector_store, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+else:
+    index = VectorStoreIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+    index.storage_context.persist()
 response_synthesizer = get_response_synthesizer(response_mode="refine")
 retriever = VectorIndexRetriever(index=index)
 query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
@@ -170,7 +176,7 @@ async def query_llama(request: QueryRequest):
         answer_in_user_language = translator.translate(body=[safe_english_answer], from_language='en', to_language=[language])[0].translations[0].text
     else:
         answer_in_user_language = safe_english_answer
-
+    print(f"DEBUG: Final answer to user: {answer_in_user_language}")
     return(answer_in_user_language)
 
 @app.post("/api/messages")
