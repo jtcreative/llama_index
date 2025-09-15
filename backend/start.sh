@@ -4,13 +4,23 @@
 #     curl -L -o lid.176.bin https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin
 #     echo "Download complete."
 # fi
-mkdir -p chroma_db
+# Make sure the folder exists
+mkdir -p chroma_db/bf424a1e-f7b4-49a4-938e-4accd3464d82
 
-# Download the zip if it doesn't already exist
-echo "Downloading ChromaDB index..."
-curl -L -o chroma_db/chroma_db.zip \
-https://medichatblobstorage.blob.core.windows.net/indexes/chroma_db.zip
-echo "Extracting ChromaDB index..."
-unzip -o chroma_db/chroma_db.zip -d chroma_db
+# Download the main sqlite file
+if [ ! -f chroma_db/chroma.sqlite3 ]; then
+    echo "Downloading chroma.sqlite3..."
+    curl -L -o chroma_db/chroma.sqlite3 \
+    https://medichatblobstorage.blob.core.windows.net/indexes/chroma.sqlite3
+fi
+
+# Download the folder items
+for file in data_level0.bin header.bin index_metadata.pickle length.bin link_lists.bin; do
+    if [ ! -f chroma_db/bf424a1e-f7b4-49a4-938e-4accd3464d82/$file ]; then
+        echo "Downloading $file..."
+        curl -L -o chroma_db/bf424a1e-f7b4-49a4-938e-4accd3464d82/$file \
+        https://medichatblobstorage.blob.core.windows.net/indexes/bf424a1e-f7b4-49a4-938e-4accd3464d82/$file
+    fi
+done
 
 uvicorn main:app --host 0.0.0.0 --port 10000
