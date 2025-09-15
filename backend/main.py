@@ -19,6 +19,9 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core.storage import StorageContext
+from llama_index.core.node_parser import SimpleNodeParser
 from chatbot import Settings, client
 from prompt_templates import few_shot_prompt
 from botbuilder.schema import Activity
@@ -53,10 +56,9 @@ adapter.settings.trust_service_url = "https://webchat.botframework.com/"
 chat_engines = {}
 session_states = {}
 translator = translation_model.create_text_translation_client_with_credential()
-documents = SimpleDirectoryReader("data").load_data()
+parser = SimpleNodeParser.from_defaults(chunk_size=1500, chunk_overlap=100)
+documents = parser.get_nodes_from_documents(SimpleDirectoryReader("data").load_data())
 
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.core.storage import StorageContext
 
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection("MediChat")
@@ -67,7 +69,7 @@ if(chroma_collection.count() > 0):
     print("DEBUG: Loading existing index from ChromaDB")
     index = VectorStoreIndex.from_vector_store(vector_store=vector_store, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
 else:
-    index = VectorStoreIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+    index = VectorStoreIndex(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
     index.storage_context.persist()
 response_synthesizer = get_response_synthesizer(response_mode="refine")
 retriever = VectorIndexRetriever(index=index)
