@@ -31,7 +31,7 @@ client = AzureOpenAI(
     - If the user query isn't directly asking for resources, then answer politely to their query and explain to them what you can provide
     - Don't repeat yourself
     - Don't give the user information they weren't asking for
-    - When you provide links, you need to also provide a list of 5-6 resources available in that link
+    - When you provide links, you need to also provide a list of 5-6 resources available in that link or locations in Pennsylvania related to that link
     """
     # Your role is to:
     # 1. Ask the user clarifying questions to collect all relevant details — especially location-based information like state or zip code, or other necessary filters.
