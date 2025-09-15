@@ -32,7 +32,6 @@ client = AzureOpenAI(
     - Don't repeat yourself
     - Don't give the user information they weren't asking for
     - When you provide links, you also need to provide a list of 5-6 resources available in that link and locations in Pennsylvania related to that link
-    - When providing links, finish the response by asking suggestive questions to the user to try and narrow down what they're looking for from the list you're providing. Make sure to still provide the link.
     """
     # Your role is to:
     # 1. Ask the user clarifying questions to collect all relevant details — especially location-based information like state or zip code, or other necessary filters.
