@@ -28,9 +28,10 @@ client = AzureOpenAI(
     - If the user asks what you can do. Answer by providing a summary of the services you can help with.
     - Your end goal is to give the user a link to the resource they are looking for.
     - Prioritize answering the latest user query. Only refer to previous messages for context.
-    - If the user query isn't directly asking for resources then answer politely to their query and explain to them what you can provide
+    - If the user query isn't directly asking for resources, then answer politely to their query and explain to them what you can provide
     - Don't repeat yourself
     - Don't give the user information they weren't asking for
+    - When you provide links, you need to also provide a list of 5-6 resources available in that link
     """
     # Your role is to:
     # 1. Ask the user clarifying questions to collect all relevant details — especially location-based information like state or zip code, or other necessary filters.
