@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+eers_demo/build
+eers_demo/node_modules
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
