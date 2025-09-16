@@ -56,8 +56,6 @@ adapter.settings.trust_service_url = "https://webchat.botframework.com/"
 chat_engines = {}
 session_states = {}
 translator = translation_model.create_text_translation_client_with_credential()
-parser = SimpleNodeParser.from_defaults(chunk_size=1500, chunk_overlap=100)
-documents = parser.get_nodes_from_documents(SimpleDirectoryReader("data").load_data())
 
 
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
@@ -69,6 +67,9 @@ if(chroma_collection.count() > 0):
     print("DEBUG: Loading existing index from ChromaDB")
     index = VectorStoreIndex.from_vector_store(vector_store=vector_store, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
 else:
+    parser = SimpleNodeParser.from_defaults(chunk_size=1500, chunk_overlap=100)
+    documents = parser.get_nodes_from_documents(SimpleDirectoryReader("data").load_data())
+    print("DEBUG: Creating new index and persisting to ChromaDB")
     index = VectorStoreIndex(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
     index.storage_context.persist()
 response_synthesizer = get_response_synthesizer(response_mode="refine")
