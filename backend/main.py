@@ -57,7 +57,7 @@ adapter = BotFrameworkAdapter(adapter_settings)
 adapter.use_websocket = True
 adapter.settings.trust_service_url = "https://webchat.botframework.com/"
 
-r = redis.Redis(host='localhost', port=6379, decode_responses=True)
+r = redis.from_url(os.environ["REDIS_URL"], decode_responses=True)
 def get_session_state(session_id: str):
     return r.get(f"state:{session_id}")
 
