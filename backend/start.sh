@@ -2,7 +2,7 @@
 mkdir -p models
 if [ ! -f ./models/lid.176.bin ]; then
     echo "Downloading FastText language model..."
-    curl -L -o models/lid.176.bin \
+    curl -L -o ../models/lid.176.bin \
         https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin
     echo "Download complete."
 fi
