@@ -23,7 +23,7 @@ function App() {
 
   return (
     <div className="App">
-      <h1 className="title">E.e.r.s. Demo (PA)</h1>
+      <h1 className="title">E.e.r.s. Demo</h1>
       <div className="chat-container">
         {token ? (
           <div>
