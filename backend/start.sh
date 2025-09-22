@@ -1,5 +1,5 @@
 #!/bin/bash
-mkdir -p models
+mkdir -p ../models
 if [ ! -f ./models/lid.176.bin ]; then
     echo "Downloading FastText language model..."
     curl -L -o ../models/lid.176.bin \
