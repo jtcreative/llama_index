@@ -41,8 +41,8 @@ APP_ID = os.environ.get("MICROSOFT_APP_ID")
 APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
 
-print("DEBUG: Fetching language detection model...")
 model_path = os.path.join(os.path.dirname(__file__), "..", "models", "lid.176.bin")
+print("DEBUG: Fetching language detection model from: ", model_path)
 lang_model = fasttext.load_model(model_path)
 
 if APP_ID and APP_PASSWORD:
