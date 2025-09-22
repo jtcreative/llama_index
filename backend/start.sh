@@ -1,9 +1,9 @@
 #!/bin/bash
-# if [ ! -f ./lid.176.bin ]; then
-#     echo "Downloading FastText language model..."
-#     curl -L -o lid.176.bin https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin
-#     echo "Download complete."
-# fi
+if [ ! -f ./lid.176.bin ]; then
+    echo "Downloading FastText language model..."
+    curl -L -o lid.176.bin https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin
+    echo "Download complete."
+fi
 # Make sure the folder exists
 mkdir -p chroma_db/bf424a1e-f7b4-49a4-938e-4accd3464d82
 
