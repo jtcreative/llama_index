@@ -6,6 +6,8 @@ import translation_model
 import chromadb
 
 import fasttext
+import redis
+from redisMemory import RedisChatMemory
 from spacy import load
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +21,9 @@ from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.retrievers import VectorIndexRetriever
+from llama_index.vector_stores.chroma import ChromaVectorStore
+from llama_index.core.storage import StorageContext
+from llama_index.core.node_parser import SimpleNodeParser
 from chatbot import Settings, client
 from prompt_templates import few_shot_prompt
 from botbuilder.schema import Activity
@@ -35,7 +40,9 @@ app.add_middleware(
 APP_ID = os.environ.get("MICROSOFT_APP_ID")
 APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
+
 model_path = os.path.join(os.path.dirname(__file__), "..", "models", "lid.176.bin")
+print("DEBUG: Fetching language detection model from: ", model_path)
 lang_model = fasttext.load_model(model_path)
 
 if APP_ID and APP_PASSWORD:
@@ -50,20 +57,31 @@ adapter = BotFrameworkAdapter(adapter_settings)
 adapter.use_websocket = True
 adapter.settings.trust_service_url = "https://webchat.botframework.com/"
 
+r = redis.from_url(os.environ["REDIS_URL"], decode_responses=True)
+def get_session_state(session_id: str):
+    return r.get(f"state:{session_id}")
+
+def set_session_state(session_id: str, state: str, ttl=3600):
+    r.setex(f"state:{session_id}", ttl, state)  # expire after 1h
 chat_engines = {}
 session_states = {}
 translator = translation_model.create_text_translation_client_with_credential()
-documents = SimpleDirectoryReader("data").load_data()
 
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.core.storage import StorageContext
 
 chroma_client = chromadb.PersistentClient(path="./chroma_db")
 chroma_collection = chroma_client.get_or_create_collection("MediChat")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-index = VectorStoreIndex.from_documents(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+if(chroma_collection.count() > 0):
+    print("DEBUG: Loading existing index from ChromaDB")
+    index = VectorStoreIndex.from_vector_store(vector_store=vector_store, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+else:
+    parser = SimpleNodeParser.from_defaults(chunk_size=1500, chunk_overlap=100)
+    documents = parser.get_nodes_from_documents(SimpleDirectoryReader("data").load_data())
+    print("DEBUG: Creating new index and persisting to ChromaDB")
+    index = VectorStoreIndex(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+    index.storage_context.persist()
 response_synthesizer = get_response_synthesizer(response_mode="refine")
 retriever = VectorIndexRetriever(index=index)
 query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
@@ -123,22 +141,32 @@ async def query_llama(request: QueryRequest):
     session_id = request.session_id
     print(f"DEBUG: Received query from session {session_id}: {request.query}")
 
-      # Step 1: Detect the language of the question
-    if session_id not in chat_engines:
-        chat_engines[session_id] = CondenseQuestionChatEngine.from_defaults(query_engine=query_engine, lm=client, memory= ChatMemoryBuffer.from_defaults(), chat_prompt=few_shot_prompt)
 
     clean_query = request.query.strip().lower()
     language, confidence = detect_language(clean_query)
     print(f"DEBUG: Detected language {language} with confidence {confidence}")
+
     if confidence < 0.2:
         return "Can you rephrase that? I couldn't confidently detect the language."
 
-    # Step 2: If not English, translate the question
+    # # Step 1: If not English, translate the question
     if language != 'en':
         translated_question = translator.translate(body=[request.query], to_language=['en'], from_language=language)[0].translations[0].text
     else:
         translated_question = request.query
     
+    # Step 2: Restore short-term memory from Redis
+    memory_key = f"chat:{session_id}"
+    memory = RedisChatMemory(redis_client=r, key=memory_key)
+
+    # Step 3: Build a fresh chat engine with memory
+    chat_engine = CondenseQuestionChatEngine.from_defaults(
+        query_engine=query_engine,
+        lm=client,
+        memory=memory,
+        chat_prompt=few_shot_prompt
+    )
+
     # if session_id not in session_states:
     #     guessed_state = extract_state_from_text(translated_question)
     #     if not guessed_state:
@@ -153,7 +181,7 @@ async def query_llama(request: QueryRequest):
 
     # user_state = session_states[session_id]
 
-    # # Step 3: Set up a filtered query engine based on state
+    # Step 4: Set up a filtered query engine based on state
     # filtered_retriever = VectorIndexRetriever(index=index, filters={"coverage_area": user_state})
     # state_query_engine = RetrieverQueryEngine(retriever=filtered_retriever, response_synthesizer=response_synthesizer)
 
@@ -161,17 +189,22 @@ async def query_llama(request: QueryRequest):
     # chat_engines[session_id]._query_engine = state_query_engine
 
 
-    # Step 3: Use LlamaIndex to answer the question
-    answer_in_english = chat_engines[session_id].chat(translated_question)
+    # Step 5: Use LlamaIndex to answer the question
+    answer_in_english = chat_engine.chat(translated_question)
+    answer_text = apply_guardrails(answer_in_english.response)
 
-    safe_english_answer = apply_guardrails(answer_in_english.response)
+    # Step 5: Save new Q&A back to Redis with expiry (e.g., 30 mins)
+    memory.append("user", translated_question)
+    memory.append("assistant", answer_text)
+    r.expire(memory_key, 1800)
 
-    # #Step 4: Translate the answer back to the original language
+    # #Step 6: Translate the answer back to the original language
     if language != 'en':
-        answer_in_user_language = translator.translate(body=[safe_english_answer], from_language='en', to_language=[language])[0].translations[0].text
+        answer_in_user_language = translator.translate(body=[answer_text], from_language='en', to_language=[language])[0].translations[0].text
     else:
-        answer_in_user_language = safe_english_answer
+        answer_in_user_language = answer_text
 
+    print(f"DEBUG: Final answer to user: {answer_in_user_language}")
     return(answer_in_user_language)
 
 @app.post("/api/messages")

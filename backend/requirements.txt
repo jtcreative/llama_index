@@ -1,4 +1,5 @@
-langid
+numpy<2.0.0
+fasttext-wheel
 fastapi
 spacy
 chromadb
@@ -10,3 +11,4 @@ llama-index-embeddings-azure-openai
 llama-index-vector-stores-chroma
 botbuilder-core
 botbuilder-schema
+redis
