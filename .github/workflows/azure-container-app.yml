@@ -7,6 +7,11 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write   # for OIDC auth
+      contents: read
+      
     steps:
       - name: Check out code
         uses: actions/checkout@v3
@@ -19,16 +24,22 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Log in to ACR
-        run: az acr login --name orcaneersArc
+        run: az acr login --name orcaneersarc
 
-      - name: Build and push image
-        run: |
-          docker build -t orcaneersarc.azurecr.io/llamaindex:${{ github.sha }} ./backend
-          docker push orcaneersarc.azurecr.io/llamaindex:${{ github.sha }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            orcaneersarc.azurecr.io/llamaindex:${{ github.sha }}
+            orcaneersarc.azurecr.io/llamaindex:latest
+          cache-from: type=registry,ref=orcaneersarc.azurecr.io/llamaindex:latest
+          cache-to: type=inline
 
       - name: Deploy to Container App
         run: |
           az containerapp update \
             --name orcaneers-app-backend \
             --resource-group orcaneeers-rg \
-            --image orcaneersarc.azurecr.io/llamaindex:${{ github.sha }}
+            --image orcaneersarc.azurecr.io/llamaindex${{ github.sha }}
