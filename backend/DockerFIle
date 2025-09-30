@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Copy files
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt \
+&& python -m spacy download en_core_web_sm
+
+COPY . .
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+# Run the chatbot script (adjust if it's a different entry point)
+CMD ["sh", "./start.sh"]
