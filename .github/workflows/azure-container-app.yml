@@ -43,4 +43,4 @@ jobs:
           az containerapp update \
             --name orcaneers-app-backend \
             --resource-group orcaneeers-rg \
-            --image orcaneersarc.azurecr.io/llamaindex${{ github.sha }}
+            --image orcaneersarc.azurecr.io/llamaindex:${{ github.sha }
