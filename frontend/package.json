@@ -1,8 +1,9 @@
 {
   "name": "eers_react_demo",
   "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node server/server.js",
+    "start": "node server/server.mjs",
     "build": "cd eers_demo && npm install && npm run build"
   },
   "dependencies": {
