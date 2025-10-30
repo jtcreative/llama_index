@@ -11,23 +11,20 @@ from redisMemory import RedisChatMemory
 from spacy import load
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-
-from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex
+from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
+from llama_index.core import VectorStoreIndex
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
-from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.retrievers import VectorIndexRetriever
-from llama_index.vector_stores.chroma import ChromaVectorStore
-from llama_index.core.storage import StorageContext
-from llama_index.core.node_parser import SimpleNodeParser
+from llama_index.vector_stores.azureaisearch import AzureAISearchVectorStore
 from chatbot import Settings, client
 from prompt_templates import few_shot_prompt
 from botbuilder.schema import Activity
-from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings, TurnContext, activity_handler
+from botbuilder.core import BotFrameworkAdapter, BotFrameworkAdapterSettings, TurnContext
 app = FastAPI()
 
 app.add_middleware(
@@ -40,6 +37,111 @@ app.add_middleware(
 APP_ID = os.environ.get("MICROSOFT_APP_ID")
 APP_PASSWORD = os.environ.get("MICROSOFT_APP_PASSWORD")
 TENANT_ID = os.environ.get("MICROSOFT_TENANT_ID")
+
+##TEMP CODE
+# from azure.search.documents.indexes import SearchIndexClient
+# from azure.search.documents.indexes.models import (
+#     SearchIndex, SearchField, SearchFieldDataType,
+#     VectorSearch, HnswAlgorithmConfiguration, VectorSearchProfile
+# )
+# from azure.search.documents import SearchClient
+# from azure.core.credentials import AzureKeyCredential
+
+# chroma_client = chromadb.PersistentClient(path="./chroma_db")
+# chroma_collection = chroma_client.get_or_create_collection("MediChat")
+# results = chroma_collection.get(include=["embeddings", "documents"])
+# print(f"DEBUG: Found {len(results['ids'])} Chroma entries")
+# docs = []
+# import numpy as np
+# import json
+# for i, id_ in enumerate(results["ids"]):
+#     emb = results["embeddings"][i]
+#     if isinstance(emb, np.ndarray):
+#         emb = emb.tolist()  # 👈 Convert NumPy array → JSON-safe list
+#     docs.append({
+#         "id": id_,
+#         "content": results["documents"][i],
+#         "embedding": emb,
+#         "metadata": json.dumps({ "source": "chroma", "doc_id": id_ })
+#     })
+
+# if not docs:
+#     print("⚠️ No documents found in ChromaDB. Aborting upload.")
+#     exit(1)
+     
+# index_name = "medichat-index"
+# index_client = SearchIndexClient(endpoint=endpoint, credential=AzureKeyCredential(admin_key))
+# try:
+#     index_client.delete_index(index_name)
+#     print(f"Deleted existing index '{index_name}'")
+# except Exception:
+#     print("No existing index to delete — continuing")
+
+
+# vector_search = VectorSearch(
+#     algorithms=[HnswAlgorithmConfiguration(name="default_hnsw", kind="hnsw")],
+#     profiles=[VectorSearchProfile(name="default", algorithm_configuration_name="default_hnsw")]
+# )
+# fields = [
+#     SearchField(name="id", type=SearchFieldDataType.String, key=True),
+#     SearchField(name="content", type=SearchFieldDataType.String, searchable=True),
+#     SearchField(
+#         name="embedding",
+#         type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+#         searchable=True,
+#         vector_search_dimensions=1536,  # adjust to your embedding model
+#         vector_search_profile_name="default"
+#     ),
+#     SearchField(name="metadata", type=SearchFieldDataType.String, searchable=True)
+
+# ]
+# azure_index = SearchIndex(name=index_name, fields=fields, vector_search=vector_search)
+# index_client.create_index(azure_index)
+# search_client = SearchClient(endpoint=endpoint, index_name=index_name, credential=AzureKeyCredential(admin_key))
+
+# results = search_client.search("*")  # Wildcard search
+
+# for doc in results:
+#     print(doc)
+
+# from azure.core.exceptions import ServiceRequestError
+# import time
+
+# print(f"Uploading {len(docs)} documents to Azure Search...")
+
+# batch_size = 500
+# total_uploaded = 0
+
+# for i in range(0, len(docs), batch_size):
+#     batch_docs = docs[i:i+batch_size]
+#     batch_num = i // batch_size + 1
+
+#     try:
+#         results = search_client.upload_documents(batch_docs)
+#         succeeded = sum(1 for r in results if r.succeeded)
+#         total_uploaded += succeeded
+#         print(f"✅ Uploaded batch {batch_num} ({succeeded}/{len(batch_docs)} succeeded)")
+#     except ServiceRequestError as e:
+#         print(f"⚠️ Connection dropped on batch {batch_num}: {e}")
+#         print("⏳ Retrying in 5 seconds...")
+#         time.sleep(30)
+#         try:
+#             results = search_client.upload_documents(batch_docs)
+#             succeeded = sum(1 for r in results if r.succeeded)
+#             total_uploaded += succeeded
+#             print(f"✅ Retried batch {batch_num} ({succeeded}/{len(batch_docs)} succeeded)")
+#         except Exception as e2:
+#             print(f"❌ Batch {batch_num} failed permanently: {e2}")
+#             continue
+
+#     # Short delay to prevent throttling
+#     time.sleep(1)
+
+# print(f"🎉 Finished uploading. Total successful documents: {total_uploaded}/{len(docs)}")
+# debug = input("CTRL+C to stop...")
+
+# ##END TEMP CODE
+
 
 model_path = os.path.join(os.path.dirname(__file__), "..", "models", "lid.176.bin")
 print("DEBUG: Fetching language detection model from: ", model_path)
@@ -68,23 +170,44 @@ session_states = {}
 translator = translation_model.create_text_translation_client_with_credential()
 
 
-chroma_client = chromadb.PersistentClient(path="./chroma_db")
-chroma_collection = chroma_client.get_or_create_collection("MediChat")
-vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-storage_context = StorageContext.from_defaults(vector_store=vector_store)
+# chroma_client = chromadb.PersistentClient(path="./chroma_db")
+# chroma_collection = chroma_client.get_or_create_collection("MediChat")
+# vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+# storage_context = StorageContext.from_defaults(vector_store=vector_store)
 
-if(chroma_collection.count() > 0):
-    print("DEBUG: Loading existing index from ChromaDB")
-    index = VectorStoreIndex.from_vector_store(vector_store=vector_store, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
-else:
-    parser = SimpleNodeParser.from_defaults(chunk_size=1500, chunk_overlap=100)
-    documents = parser.get_nodes_from_documents(SimpleDirectoryReader("data").load_data())
-    print("DEBUG: Creating new index and persisting to ChromaDB")
-    index = VectorStoreIndex(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
-    index.storage_context.persist()
-response_synthesizer = get_response_synthesizer(response_mode="refine")
-retriever = VectorIndexRetriever(index=index)
-query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
+# if(chroma_collection.count() > 0):
+#     print("DEBUG: Loading existing index from ChromaDB")
+#     index = VectorStoreIndex.from_vector_store(vector_store=vector_store, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+# else:
+#     parser = SimpleNodeParser.from_defaults(chunk_size=1500, chunk_overlap=100)
+#     documents = parser.get_nodes_from_documents(SimpleDirectoryReader("data").load_data())
+#     print("DEBUG: Creating new index and persisting to ChromaDB")
+#     index = VectorStoreIndex(documents, embed_model=Settings.embed_model ,llm=client, storage_context=storage_context)
+#     index.storage_context.persist()
+# response_synthesizer = get_response_synthesizer(response_mode="refine")
+# retriever = VectorIndexRetriever(index=index)
+# query_engine = RetrieverQueryEngine(retriever=retriever, response_synthesizer=response_synthesizer)
+
+AZURE_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
+AZURE_INDEX_NAME = "medichat-index" 
+AZURE_KEY = os.getenv("AZURE_SEARCH_KEY")
+search_client = SearchClient( endpoint=AZURE_ENDPOINT, index_name=AZURE_INDEX_NAME, credential=AzureKeyCredential(AZURE_KEY) )
+azure_vector_store = AzureAISearchVectorStore( 
+    search_or_index_client=search_client, 
+    id_field_key="id", 
+    chunk_field_key="content", 
+    embedding_field_key="embedding", 
+    metadata_string_field_key="metadata", 
+    # You can add "metadata" if you have it doc_id_field_key="id", 
+    )
+azure_index = VectorStoreIndex.from_vector_store( vector_store=azure_vector_store, embed_model=Settings.embed_model, llm=client )
+azure_retriever = VectorIndexRetriever(index=azure_index) 
+response_synthesizer = get_response_synthesizer(response_mode="refine") 
+query_engine = RetrieverQueryEngine( 
+    retriever=azure_retriever,
+    # persistent retriever from startup 
+    response_synthesizer=response_synthesizer 
+    )
 
 nlp = load("en_core_web_sm")
 
