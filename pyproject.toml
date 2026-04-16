@@ -1,0 +1,83 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "entertwine-chatbot-sdk"
+version = "1.0.0"
+description = "Self-hosted Azure OpenAI chatbot with Teams integration"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Entertwine", email = "support@entertwine.io"}
+]
+keywords = [
+    "chatbot",
+    "azure",
+    "openai",
+    "teams",
+    "sdk",
+    "self-hosted",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "numpy<2.0.0",
+    "fasttext-wheel>=0.9.2",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "spacy>=3.0.0",
+    "chromadb>=0.3.0",
+    "azure-ai-translation-text>=1.0.0",
+    "azure-core>=1.24.0",
+    "azure-search-documents>=11.4.0",
+    "llama-index>=0.9.0",
+    "llama-index-llms-azure-openai>=0.1.0",
+    "llama-index-embeddings-azure-openai>=0.1.0",
+    "llama-index-vector-stores-azureaisearch>=0.1.0",
+    "botbuilder-core>=4.14.0",
+    "botbuilder-schema>=4.14.0",
+    "redis>=5.0.0",
+    "click>=8.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "black>=23.0",
+    "flake8>=6.0",
+    "mypy>=1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/jtcreative/llama_index"
+Documentation = "https://github.com/jtcreative/llama_index/blob/main/README.md"
+Repository = "https://github.com/jtcreative/llama_index.git"
+Issues = "https://github.com/jtcreative/llama_index/issues"
+
+[project.scripts]
+entertwine-chatbot = "backend.cli:cli"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py38"]
