@@ -16,3 +16,9 @@ frontend/package-lock.json
 backend/chroma_db
 chroma_db
 models/*.bin
+build/
+dist/
+*.egg-info/
+*.dist-info/
+*.pyc
+.eggs/

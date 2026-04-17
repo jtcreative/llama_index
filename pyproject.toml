@@ -3,12 +3,12 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "entertwine-chatbot-sdk"
+name = "eers-sdk"
 version = "1.0.0"
 description = "Self-hosted Azure OpenAI chatbot with Teams integration"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Entertwine", email = "support@entertwine.io"}
 ]
@@ -23,7 +23,6 @@ keywords = [
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -69,7 +68,7 @@ Repository = "https://github.com/jtcreative/llama_index.git"
 Issues = "https://github.com/jtcreative/llama_index/issues"
 
 [project.scripts]
-entertwine-chatbot = "backend.cli:cli"
+eers = "backend.cli:cli"
 
 [tool.setuptools]
 package-dir = {"" = "."}
